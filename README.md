@@ -1,0 +1,1 @@
+# pemaro-inventory-server
