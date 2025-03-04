@@ -19,10 +19,10 @@ module.exports = (sequelize) => {
             allowNull: false,
             unique: true,
         },
-        price: {
-            type: DataTypes.DECIMAL(10, 2),
-            allowNull: false,
-        },
+        // price: {
+        //     type: DataTypes.DECIMAL(10, 2),
+        //     allowNull: true,
+        // },
         color: {
             type: DataTypes.STRING,
             allowNull: false,
