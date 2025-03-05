@@ -6,8 +6,11 @@ const router = express.Router();
 
 router.post('/', authMiddleware, productController.createProduct);
 router.get('/', authMiddleware, productController.getAllProducts);
-router.get('/:id', productController.getProductById);
-router.put('/:id', productController.updateProduct);
-router.delete('/:id', productController.deleteProduct);
+router.get('/:id', authMiddleware, productController.getProductById);
+router.put('/:id', authMiddleware, productController.updateProduct);
+router.delete('/:id', authMiddleware, productController.deleteProduct);
+
+// Product Variants
+router.post('/:productId/variants', productController.addVariant);
 
 module.exports = router;
