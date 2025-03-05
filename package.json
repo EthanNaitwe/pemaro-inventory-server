@@ -4,6 +4,7 @@
   "main": "app.js",
   "scripts": {
     "dev": "nodemon app.js",
+    "dev-cleanup": "git checkout develop && git branch | grep -v 'develop' | xargs git branch -D",
     "create": "cd config/db && node sync.js"
   },
   "keywords": [],

@@ -10,12 +10,16 @@ const sequelize = new Sequelize('postgres://postgres:password@localhost:5432/pem
     }
 });
 
-const db = {};
+const User = require('../../models/User')(sequelize)
+const Product = require('../../models/Product')(sequelize)
+const ProductVariant = require('../../models/ProductVariant')(sequelize, Product)
 
-db.Sequelize = Sequelize;
-db.sequelize = sequelize;
-
-db.User = require('../../models/User')(sequelize);
-db.Product = require('../../models/Product')(sequelize);
+const db = {
+    sequelize,
+    Sequelize,
+    User,
+    Product,
+    ProductVariant,
+};
 
 module.exports = db;
