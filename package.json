@@ -1,9 +1,9 @@
 {
   "name": "server",
   "version": "1.0.0",
-  "main": "app.js",
+  "main": "index.js",
   "scripts": {
-    "dev": "nodemon app.js",
+    "dev": "nodemon index.js",
     "dev-cleanup": "git checkout develop && git branch | grep -v 'develop' | xargs git branch -D",
     "create": "cd config/db && node sync.js"
   },
