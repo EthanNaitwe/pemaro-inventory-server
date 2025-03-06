@@ -1,5 +1,4 @@
 // index.js
-const serverless = require('serverless-http');
 const express = require('express');
 const morgan = require('morgan');
 const cors = require('cors');
@@ -69,7 +68,7 @@ db.sequelize.sync({ alter: true })
     })
     .catch(err => console.error('Error syncing database:', err));
 
-module.exports.handler = serverless(app);
+module.exports = app;
 
 // Vercel's Serverless Functions
 
