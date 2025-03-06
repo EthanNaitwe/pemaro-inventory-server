@@ -47,7 +47,7 @@ module.exports = (sequelize) => {
             allowNull: false,
         }
     }, {
-        schema: 'inventory_schema',
+        // schema: 'inventory_schema',
         hooks: {
             beforeCreate: async (user) => {
                 const hashedPassword = await bcrypt.hash(user.password, 10);

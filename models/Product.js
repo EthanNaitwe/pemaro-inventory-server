@@ -28,6 +28,7 @@ module.exports = (sequelize) => {
             allowNull: true,
         },
     }, {
+        // schema: 'inventory_schema',
         timestamps: true,
     });
 

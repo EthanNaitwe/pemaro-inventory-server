@@ -57,8 +57,11 @@ app.use('/api/v1/products', productRoutes);
 
 
 // Sync Sequelize models and start the server
-db.sequelize.sync().then(() => {
-    app.listen(PORT, () => {
-        console.log(`Server running on port ${PORT}`);
-    });
-});
+db.sequelize.sync({ alter: true })
+    .then(() => {
+        console.log(`✅ Database synced at: ${db.sequelize.options.storage}`)
+        app.listen(PORT, () => {
+            console.log(`Server running on port ${PORT}`);
+        });
+    })
+    .catch(err => console.error('Error syncing database:', err));

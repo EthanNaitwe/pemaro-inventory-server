@@ -42,3 +42,10 @@
  - Look into the WhatsApp api. How to get an account's avatar & display it in the site.
  - Data is the new oil
  - 
+
+
+
+INSERT INTO `Users` 
+(`surname`, `other_names`, `avatar`, `gender`, `birth_date`, `email`, `address`, `phone_number`, `password`, `createdAt`, `updatedAt`) 
+VALUES 
+('Brian', 'Pemaro', null, 'Male', '1990-01-01', 'brian@vaalzcollections.com', '123 Main St, City, Country', '+1234567890', '$2y$10$w6cW/9ga3GvorSh1Yv8.ie0H3ySGNIrask290dUJmWMQL6ETqxp0O', '2025-03-06 12:00:00', '2025-03-06 12:00:00');

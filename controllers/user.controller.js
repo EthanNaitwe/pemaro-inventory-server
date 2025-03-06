@@ -36,12 +36,10 @@ exports.createUser = async (req, res) => {
     }
 };
 
-// Get all users
+// Get Login a User
 exports.loginUser = async (req, res) => {
     try {
         const { email, phone_number, password } = req.body;
-
-        // const user = await User.findOne({ where: { username } });
 
         // Check if User exists
         const authUser = await User.findOne({
@@ -74,6 +72,7 @@ exports.loginUser = async (req, res) => {
     }
 }
 
+// Get All Users
 exports.getAllUsers = async (req, res) => {
     try {
         const users = await User.findAll();
@@ -120,6 +119,7 @@ exports.deleteUser = async (req, res) => {
     }
 };
 
+// Get Loggedin User's Profile
 exports.getProfile = async (req, res) => {
     try {
         const user = await User.findByPk(req.user.id, {
