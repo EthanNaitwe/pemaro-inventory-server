@@ -11,6 +11,7 @@ const { validate, registerSchema, loginSchema } = require('./middlewares/validat
 const { Sequelize } = require('sequelize');
 // const { User } = db;
 
+
 const userRoutes = require('./routes/userRoutes');
 const productRoutes = require('./routes/product.routes');
 
