@@ -24,7 +24,7 @@ module.exports = (sequelize, Product) => {
             allowNull: false,
         },
     }, {
-        // schema: 'inventory_schema',
+        schema: 'inventory_schema',
         timestamps: true,
     });
 
