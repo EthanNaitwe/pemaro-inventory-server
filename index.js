@@ -3,17 +3,9 @@ const express = require('express');
 const morgan = require('morgan');
 const cors = require('cors');
 const winston = require('winston');
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
-const db = require('./config/db');
-const { sequelizeErrorHandler } = require('./config/helpers');
-const { validate, registerSchema, loginSchema } = require('./middlewares/validate');
-const { Sequelize } = require('sequelize');
-// const { User } = db;
 
-
-const userRoutes = require('./routes/userRoutes');
-const productRoutes = require('./routes/product.routes');
+const userRoutes = require('./routes/user.g.routes');
+const productRoutes = require('./routes/product.g.routes');
 
 require('dotenv').config();
 
@@ -59,12 +51,16 @@ app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/products', productRoutes);
 
 
-// Sync Sequelize models and start the server
-db.sequelize.sync({ alter: true })
-    .then(() => {
-        app.listen(PORT, () => {
-            console.log(`Server running on port ${PORT}`);
-        });
-        // app(req, res);  // This allows Express to handle the request
-    })
-    .catch(err => console.error('Error syncing database:', err));
+// // Sync Sequelize models and start the server
+// db.sequelize.sync({ alter: true })
+//     .then(() => {
+//         app.listen(PORT, () => {
+//             console.log(`Server running on port ${PORT}`);
+//         });
+//         // app(req, res);  // This allows Express to handle the request
+//     })
+//     .catch(err => console.error('Error syncing database:', err));
+
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+});

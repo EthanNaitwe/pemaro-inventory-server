@@ -59,7 +59,6 @@ exports.deleteProduct = async (req, res) => {
 exports.addVariant = async (req, res) => {
     try {
         const { productId } = req.params;
-        console.log('productId', productId);
 
         await productService.getProductById(productId);
 
