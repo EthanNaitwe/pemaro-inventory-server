@@ -6,7 +6,6 @@ module.exports = (req, res, next) => {
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return res.status(401).json({ message: 'Access denied. No token provided.' });
     }
-    console.log('authHeader', authHeader)
 
     const token = authHeader.split(' ')[1]; // Extract token from "Bearer <token>"
 
