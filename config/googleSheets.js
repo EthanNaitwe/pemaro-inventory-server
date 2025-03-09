@@ -45,7 +45,7 @@ async function appendToSheet(sheets, spreadsheetId, range, values) {
             requestBody: { values },
         });
 
-        console.log('✅ Data appended successfully:', response.data);
+        // console.log('✅ Data appended successfully:', response.data);
         return response.data;
     } catch (error) {
         console.error('❌ Error appending data to sheet:', error.response?.data || error);
