@@ -11,6 +11,6 @@ router.put('/:id', authMiddleware, productController.updateProduct);
 router.delete('/:id', authMiddleware, productController.deleteProduct);
 
 // Product Variants
-router.post('/:productId/variants', productController.addVariant);
+router.post('/:productId/variants', authMiddleware, productController.addVariant);
 
 module.exports = router;
