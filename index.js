@@ -6,6 +6,7 @@ const winston = require('winston');
 
 const userRoutes = require('./routes/user.g.routes');
 const productRoutes = require('./routes/product.g.routes');
+const saleRoutes = require('./routes/sale.g.routes');
 
 require('dotenv').config();
 
@@ -49,6 +50,7 @@ app.get('/', (req, res) => {
 
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/products', productRoutes);
+app.use('/api/v1/sales', saleRoutes);
 
 
 // // Sync Sequelize models and start the server

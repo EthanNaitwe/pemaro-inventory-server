@@ -44,8 +44,16 @@
  - 
 
 
-
-INSERT INTO `Users` 
-(`surname`, `other_names`, `avatar`, `gender`, `birth_date`, `email`, `address`, `phone_number`, `password`, `createdAt`, `updatedAt`) 
-VALUES 
-('Brian', 'Pemaro', null, 'Male', '1990-01-01', 'brian@vaalzcollections.com', '123 Main St, City, Country', '+1234567890', '$2y$10$w6cW/9ga3GvorSh1Yv8.ie0H3ySGNIrask290dUJmWMQL6ETqxp0O', '2025-03-06 12:00:00', '2025-03-06 12:00:00');
+ - To make a sale, after selecting the product, the color & size drop downs should be populated with only data specific to the selected product in order to have system matching data at all times.
+ - On scaling, App default shows having a single field to receive a shop number eg. HAM-G12. This checks for individual settings from the config file (structure shown below). The `shop_number` is set to local storage to have a customized next visit.
+  [
+   {
+   shop_number: 'ham-g12',
+   shop_name: 'Atom',
+   shop_logo: 'xxxx',
+   shop_small_logo: 'yyyy',
+   licence_key: 'yyyyyyyy',
+   storageId: 'xxxxxxxxxxxx',
+  },
+  ......
+  ]
