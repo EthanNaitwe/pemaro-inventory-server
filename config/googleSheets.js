@@ -16,23 +16,6 @@ async function getSheetsClient() {
     return google.sheets({ version: "v4", auth: authClient });
 }
 
-// // Append data to a specific sheet
-// async function appendToSheet(sheets, spreadsheetId, range, values) {
-//     try {
-//         const response = await sheets.spreadsheets.values.append({
-//             spreadsheetId,
-//             range,
-//             valueInputOption: 'RAW',
-//             insertDataOption: 'INSERT_ROWS',
-//             requestBody: { values },
-//         });
-
-//         return response.data;
-//     } catch (error) {
-//         console.error('Error appending data:', error);
-//         throw new Error('Failed to append data to sheet');
-//     }
-// }
 async function appendToSheet(sheets, spreadsheetId, range, values) {
     try {
         console.log(`📌 Appending to ${spreadsheetId} -> ${range}:`, values);
@@ -53,4 +36,27 @@ async function appendToSheet(sheets, spreadsheetId, range, values) {
     }
 }
 
-module.exports = { getSheetsClient, appendToSheet };
+// Update Sheet Row
+async function updateSheetRow(sheets, spreadsheetId, sheetName, rowIndex, values) {
+    try {
+        const rowRange = `${sheetName}!A${rowIndex + 2}:Z${rowIndex + 2}`; // Adjust range dynamically
+
+        console.log(`📌 Updating row in ${spreadsheetId} -> ${rowRange}:`, values);
+
+        const response = await sheets.spreadsheets.values.update({
+            spreadsheetId,
+            range: rowRange,
+            valueInputOption: "RAW",
+            requestBody: { values: [values] },
+        });
+
+        console.log('✅ Row updated successfully:', response.data);
+        return response.data;
+    } catch (error) {
+        console.error('❌ Error updating row:', error.response?.data || error);
+        throw new Error('Failed to update row in sheet');
+    }
+}
+
+
+module.exports = { getSheetsClient, appendToSheet, updateSheetRow };

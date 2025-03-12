@@ -2,6 +2,7 @@
 const { validateProduct } = require('../middlewares/productValidator');
 const { getSheetsClient } = require('../config/googleSheets');
 const SPREADSHEET_ID = process.env.GOOGLE_SHEETS_SPREADSHEET_ID;
+const SHEET_NAME = "Sales"; // Change this to match your sheet's name
 
 
 exports.addProductG = async (product) => {
@@ -37,6 +38,7 @@ exports.fetchAllProductsG = async () => {
     const sheets = await getSheetsClient();
     const productRange = "Products!A2:F"; // Ensure this range covers your product data
     const variantRange = "ProductVariants!A2:E"; // Ensure this range covers variant data
+    const saleRange = "Sales!A2:Z"; // Ensure this range covers variant data
 
     // Fetch products
     const productResponse = await sheets.spreadsheets.values.get({
@@ -50,8 +52,15 @@ exports.fetchAllProductsG = async () => {
         range: variantRange,
     });
 
+    // Fetch Sales
+    const saleResponse = await sheets.spreadsheets.values.get({
+        spreadsheetId: SPREADSHEET_ID,
+        range: saleRange,
+    });
+
     const productRows = productResponse.data.values || [];
     const variantRows = variantResponse.data.values || [];
+    const saleRows = saleResponse.data.values || [];
 
     // Convert rows into an array of objects
     const products = productRows.map(row => ({
@@ -61,7 +70,8 @@ exports.fetchAllProductsG = async () => {
         tax: parseFloat(row[3]) || 0,
         discount: parseFloat(row[4]) || 0,
         description: row[5],
-        variants: [] // Initialize empty array
+        variants: [], // Initialize empty array
+        sales: [], // Initialize empty array
     }));
 
     const variants = variantRows.map(row => ({
@@ -72,9 +82,24 @@ exports.fetchAllProductsG = async () => {
         quantity: parseInt(row[4], 10),
     }));
 
+    const sales = saleRows.map(row => ({
+        id: row[0],
+        productId: row[1],
+        color: row[2],
+        size: row[3],
+        reference: row[4],
+        status: row[5],
+        payment: row[6],
+        total: parseInt(row[7], 10),
+        paid: parseInt(row[8], 10),
+        due: parseInt(row[9], 10),
+        date: row[10],
+    }));
+
     // Assign variants to respective products
     products.forEach(product => {
         product.variants = variants.filter(variant => variant.productId === product.id);
+        product.sales = sales.filter(sale => sale.productId === product.id);
     });
 
     return products;
@@ -96,7 +121,7 @@ exports.fetchProductByArtNumberG = async (artNumber) => {
     const product = rows.find(row => row[2] === artNumber);
 
     if (!product) return null;
-    
+
 
     return {
         id: product[0],
