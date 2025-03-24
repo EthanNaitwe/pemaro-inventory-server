@@ -10,6 +10,8 @@ const auth = new google.auth.GoogleAuth({
     scopes: ["https://www.googleapis.com/auth/spreadsheets"],
 });
 
+const SPREADSHEET_ID = process.env.GOOGLE_SHEETS_SPREADSHEET_ID;
+
 // Get Sheets API client
 async function getSheetsClient() {
     const authClient = await auth.getClient();
@@ -59,4 +61,4 @@ async function updateSheetRow(sheets, spreadsheetId, sheetName, rowIndex, values
 }
 
 
-module.exports = { getSheetsClient, appendToSheet, updateSheetRow };
+module.exports = { getSheetsClient, appendToSheet, updateSheetRow, SPREADSHEET_ID };
