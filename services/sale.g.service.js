@@ -1,6 +1,5 @@
-const { getSheetsClient } = require("../config/googleSheets");
+const { getSheetsClient, SPREADSHEET_ID } = require("../config/googleSheets");
 
-const SPREADSHEET_ID = process.env.GOOGLE_SHEETS_SPREADSHEET_ID;
 const SALES_SHEET = "Sales"; // Change this to match your sheet's name
 const PRODUCTS_SHEET = "Products"; // Change this to match your sheet's name
 

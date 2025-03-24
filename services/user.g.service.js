@@ -58,7 +58,7 @@ async function loginUser(email, password) {
 async function getUserProfile(userId) {
     try {
         const sheets = await getSheetsClient();
-        const range = "Users!A2:K"; // Ensure this covers your user details
+        const range = "Users!A2:K"; // Adjust range to cover user data
 
         const response = await sheets.spreadsheets.values.get({
             spreadsheetId: SPREADSHEET_ID,
@@ -90,5 +90,45 @@ async function getUserProfile(userId) {
     }
 }
 
+/**
+ * Fetch all users from the Google Sheet
+ */
+async function getAllUsers() {
+    try {
+        const sheets = await getSheetsClient();
+        const range = "Users!A2:K"; // Adjust range to cover user data
 
-module.exports = { loginUser, getUserProfile };
+        const response = await sheets.spreadsheets.values.get({
+            spreadsheetId: SPREADSHEET_ID,
+            range: range,
+        });
+
+        const rows = response.data.values;
+
+        if (!rows || rows.length === 0) {
+            return [];
+        }
+
+        // Convert rows to objects
+        const users = rows.map(row => ({
+            id: row[0],
+            surname: row[1],
+            other_names: row[2],
+            avatar: row[3],
+            gender: row[4],
+            birth_date: row[5],
+            email: row[6],
+            address: row[7],
+            phone_number: row[8],
+            role: row[10],
+        }));
+
+        return users;
+    } catch (error) {
+        console.error("❌ Error fetching users:", error.response?.data || error);
+        throw new Error("Failed to retrieve users from the sheet");
+    }
+}
+
+
+module.exports = { loginUser, getUserProfile, getAllUsers };

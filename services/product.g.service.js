@@ -1,6 +1,7 @@
 
 const { validateProduct } = require('../middlewares/productValidator');
 const { getSheetsClient } = require('../config/googleSheets');
+const { capitalize } = require('lodash');
 const SPREADSHEET_ID = process.env.GOOGLE_SHEETS_SPREADSHEET_ID;
 const SHEET_NAME = "Sales"; // Change this to match your sheet's name
 
@@ -78,7 +79,7 @@ exports.fetchAllProductsG = async () => {
         id: row[0],
         productId: row[1],
         size: row[2],
-        color: row[3],
+        color: capitalize(row[3]),
         quantity: parseInt(row[4], 10),
     }));
 
