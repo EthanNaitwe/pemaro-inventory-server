@@ -91,7 +91,7 @@ exports.fetchAllProductsG = async () => {
         reference: row[4],
         status: row[5],
         payment: row[6],
-        total: parseInt(row[7], 10),
+        amount: parseInt(row[7], 10),
         paid: parseInt(row[8], 10),
         due: parseInt(row[9], 10),
         date: row[10],
