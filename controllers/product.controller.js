@@ -2,8 +2,8 @@ const productService = require('../services/product.service');
 
 exports.createProduct = async (req, res) => {
     try {
-        const { name, artNumber, tax, description, imageUrl, discount, variants } = req.body;
-        const product = await productService.createProduct({ name, artNumber, tax, description, imageUrl, discount });
+        const { name, artNumber, purchasing_price, description, imageUrl, minimum_price, variants } = req.body;
+        const product = await productService.createProduct({ name, artNumber, purchasing_price, description, imageUrl, minimum_price });
 
         if (variants && variants.length > 0) {
             const productVariants = variants.map(variant => ({

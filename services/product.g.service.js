@@ -5,37 +5,9 @@ const { capitalize } = require('lodash');
 const SPREADSHEET_ID = process.env.GOOGLE_SHEETS_SPREADSHEET_ID;
 const SHEET_NAME = "Sales"; // Change this to match your sheet's name
 
+require('dotenv').config();
 
-exports.addProductG = async (product) => {
-    const { error } = validateProduct(product);
-    if (error) throw new Error(error.details[0].message);
-
-    const sheets = await getSheetsClient();
-    const range = "Products!A2:F"; // Ensure this matches your sheet's structure
-
-    // Append new product row
-    await sheets.spreadsheets.values.append({
-        spreadsheetId: SPREADSHEET_ID,
-        range: range,
-        valueInputOption: "RAW",
-        insertDataOption: "INSERT_ROWS",
-        requestBody: {
-            values: [[
-                Date.now(),
-                product.name,
-                product.artNumber,
-                product.tax,
-                product.discount,
-                product.description,
-            ]],
-        },
-    });
-
-    return { success: true, message: "Product added successfully!" };
-}
-
-
-exports.fetchAllProductsG = async () => {
+async function fetchAllProductsG() {
     const sheets = await getSheetsClient();
     const productRange = "Products!A2:F"; // Ensure this range covers your product data
     const variantRange = "ProductVariants!A2:E"; // Ensure this range covers variant data
@@ -68,8 +40,8 @@ exports.fetchAllProductsG = async () => {
         id: row[0],
         name: row[1],
         artNumber: row[2],
-        tax: parseFloat(row[3]) || 0,
-        discount: parseFloat(row[4]) || 0,
+        purchasing_price: parseFloat(row[3]) || 0,
+        minimum_price: parseFloat(row[4]) || 0,
         description: row[5],
         variants: [], // Initialize empty array
         sales: [], // Initialize empty array
@@ -106,7 +78,35 @@ exports.fetchAllProductsG = async () => {
     return products;
 }
 
-exports.fetchProductByArtNumberG = async (artNumber) => {
+async function addProductG(product) {
+    const { error } = validateProduct(product);
+    if (error) throw new Error(error.details[0].message);
+
+    const sheets = await getSheetsClient();
+    const range = "Products!A2:F"; // Ensure this matches your sheet's structure
+
+    // Append new product row
+    await sheets.spreadsheets.values.append({
+        spreadsheetId: SPREADSHEET_ID,
+        range: range,
+        valueInputOption: "RAW",
+        insertDataOption: "INSERT_ROWS",
+        requestBody: {
+            values: [[
+                Date.now(),
+                product.name,
+                `${process.env.ART_NUMBER}00${(await fetchAllProductsG()).length + 1}`,
+                product.purchasing_price,
+                product.minimum_price,
+                product.description,
+            ]],
+        },
+    });
+
+    return { success: true, message: "Product added successfully!" };
+}
+
+async function fetchProductByArtNumberG(artNumber) {
     const sheets = await getSheetsClient();
     const range = "Products!A2:F"; // Ensure this range covers your product data
 
@@ -128,8 +128,10 @@ exports.fetchProductByArtNumberG = async (artNumber) => {
         id: product[0],
         name: product[1],
         artNumber: product[2],
-        tax: product[3],
-        discount: product[4],
+        purchasing_price: product[3],
+        minimum_price: product[4],
         description: product[5],
     };
 }
+
+module.exports = { fetchAllProductsG, fetchProductByArtNumberG, addProductG };

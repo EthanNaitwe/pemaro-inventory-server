@@ -11,11 +11,11 @@ module.exports = (sequelize) => {
             allowNull: false,
             unique: true,
         },
-        tax: {
+        purchasing_price: {
             type: DataTypes.DECIMAL(5, 2),
             allowNull: true,
         },
-        discount: {
+        minimum_price: {
             type: DataTypes.DECIMAL(5, 2),
             allowNull: true,
         },
