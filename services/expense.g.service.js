@@ -1,4 +1,4 @@
-const moment = require("moment");
+const { DateTime } = require("luxon");
 const { getSheetsClient } = require("../config/googleSheets");
 
 const SPREADSHEET_ID = process.env.GOOGLE_SHEETS_SPREADSHEET_ID;
@@ -34,7 +34,7 @@ async function addExpense(expense) {
 
     const status = "Active";
     const expenseId = `EXP-${Date.now()}`;
-    const date = moment().format('MMMM Do YYYY, h:mm a');
+    const date = DateTime.now().toFormat('dd/MM/yyyy');
 
     const values = [[
         expenseId, expense.category, refNo, date,

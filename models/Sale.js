@@ -19,7 +19,7 @@ module.exports = (sequelize) => {
             type: DataTypes.STRING,
             allowNull: false,
         },
-        total: {
+        amount: {
             type: DataTypes.DECIMAL(5, 2),
             allowNull: true,
         },

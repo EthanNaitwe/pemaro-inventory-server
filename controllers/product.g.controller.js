@@ -2,17 +2,17 @@ const productService = require('../services/product.g.service');
 
 exports.addProductG = async (req, res) => {
     try {
-        const { name, artNumber } = req.body;
+        const { name } = req.body;
 
         // Validate input
-        if (!name || !artNumber) {
+        if (!name) {
             return res.status(400).json({ message: "All fields are required" });
         }
-        const product = await productService.fetchProductByArtNumberG(artNumber);
+        // const product = await productService.fetchProductByArtNumberG(artNumber);
 
-        if (product) {
-            throw new Error('A Product with this Art Number already exists');
-        }
+        // if (product) {
+        //     throw new Error('A Product with this Art Number already exists');
+        // }
 
         const result = await productService.addProductG(req.body);
 

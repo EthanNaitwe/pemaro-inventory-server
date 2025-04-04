@@ -3,9 +3,9 @@ const Joi = require('joi');
 exports.validateProduct = (data) => {
     const schema = Joi.object({
         name: Joi.string().required(),
-        artNumber: Joi.string().required(),
-        tax: Joi.number().min(0).max(100).optional(),
-        discount: Joi.number().min(0).max(100).optional(),
+        // artNumber: Joi.string().required(),
+        minimum_price: Joi.number().integer().min(1).required(),
+        purchasing_price: Joi.number().integer().min(1).required(),
         imageUrl: Joi.string().uri().optional(),
         description: Joi.string().optional(),
     });

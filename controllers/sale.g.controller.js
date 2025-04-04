@@ -1,5 +1,5 @@
-const moment = require("moment");
 const salesService = require("../services/sale.g.service");
+const { DateTime } = require("luxon");
 
 // Get all sales
 async function getAllSales(req, res) {
@@ -30,10 +30,10 @@ async function addSale(req, res) {
                 reference: 'REF-023',
                 status: 'Completed',
                 payment: 'Paid',
-                total: amount,
+                amount,
                 paid: amount,
                 due: 0,
-                date: moment().format('MMMM Do YYYY, h:mm a'),
+                date: DateTime.now().toFormat('dd/MM/yyyy'),
             });
         res.status(201).json({ message: "Sale added successfully" });
     } catch (error) {

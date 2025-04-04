@@ -33,7 +33,7 @@ async function getAllSales() {
         let sale = {};
         headers.forEach((header, index) => {
             sale[header] = row[index] || "";
-            sale.artNumber = products.find(prod => prod.id === row[1]).artNumber;
+            sale.artNumber = products.find(prod => prod.id === row[1]);
         });
         return sale;
     });
