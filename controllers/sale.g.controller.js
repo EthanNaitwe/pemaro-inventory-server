@@ -16,23 +16,22 @@ async function getAllSales(req, res) {
 async function addSale(req, res) {
     try {
         const { prodId } = req.params;
-        const { color, size, amount } = req.body;
+        const { artNumber, amount, quantity } = req.body;
 
-        if (!color || !size || !amount)
-            return res.status(400).json({ message: "All fields are required" });
+        if (!quantity || !artNumber)
+            return res.status(400).json({ message: "All fields are required." });
 
         await salesService.addSale(
             {
                 id: `SAL-${Date.now()}`,
                 productId: prodId,
-                color,
-                size,
-                reference: 'REF-023',
+                quantity,
                 status: 'Completed',
                 payment: 'Paid',
                 amount,
                 paid: amount,
                 due: 0,
+                user_id: req.user.id,
                 date: DateTime.now().toFormat('dd/MM/yyyy'),
             });
         res.status(201).json({ message: "Sale added successfully" });

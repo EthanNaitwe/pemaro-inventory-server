@@ -5,9 +5,8 @@ exports.addVariant = async (req, res) => {
         const { productId } = req.params;
         const { size, color, quantity } = req.body;
 
-        if (!productId || !size || !color || !quantity) {
-            return res.status(400).json({ message: "All fields are required" });
-        }
+        if (!productId || !size || !color || !quantity)
+            return res.status(400).json({ message: "All fields are required`" });
 
         const newVariant = await variantService.addVariant(productId, size, color, quantity);
         res.status(201).json({ message: "Variant added successfully", variant: newVariant });

@@ -25,6 +25,7 @@ async function getAllSales() {
     // Convert rows into an array of objects
     const products = productRows.map(row => ({
         id: row[0],
+        name: row[1],
         artNumber: row[2],
     }));
 
