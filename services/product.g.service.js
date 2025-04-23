@@ -9,7 +9,7 @@ require('dotenv').config();
 
 async function fetchAllProductsG() {
     const sheets = await getSheetsClient();
-    const productRange = "Products!A2:F"; // Ensure this range covers your product data
+    const productRange = "Products!A2:Z"; // Ensure this range covers your product data
     const variantRange = "ProductVariants!A2:E"; // Ensure this range covers variant data
     const saleRange = "Sales!A2:Z"; // Ensure this range covers variant data
 
@@ -43,6 +43,9 @@ async function fetchAllProductsG() {
         purchasing_price: parseFloat(row[3]) || 0,
         minimum_price: parseFloat(row[4]) || 0,
         description: row[5],
+        food_category: row[9],
+        sub_category: row[10],
+        food: row[11].trim(),
         variants: [], // Initialize empty array
         sales: [], // Initialize empty array
     }));
@@ -83,7 +86,7 @@ async function addProductG(product) {
     if (error) throw new Error(error.details[0].message);
 
     const sheets = await getSheetsClient();
-    const range = "Products!A2:F"; // Ensure this matches your sheet's structure
+    const range = "Products!A2:Z"; // Ensure this matches your sheet's structure
 
     // Append new product row
     await sheets.spreadsheets.values.append({
@@ -108,7 +111,7 @@ async function addProductG(product) {
 
 async function fetchProductByArtNumberG(artNumber) {
     const sheets = await getSheetsClient();
-    const range = "Products!A2:F"; // Ensure this range covers your product data
+    const range = "Products!A2:Z"; // Ensure this range covers your product data
 
     const response = await sheets.spreadsheets.values.get({
         spreadsheetId: SPREADSHEET_ID,

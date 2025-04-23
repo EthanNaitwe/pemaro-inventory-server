@@ -1,3 +1,4 @@
+const { groupBy } = require('lodash');
 const productService = require('../services/product.g.service');
 
 exports.addProductG = async (req, res) => {
@@ -25,7 +26,12 @@ exports.addProductG = async (req, res) => {
 exports.fetchAllProductsG = async (req, res) => {
     try {
         const products = await productService.fetchAllProductsG();
-        res.status(200).json({ products });
+        res.status(200).json({
+            products,
+            food_category: groupBy(products, 'food_category'),
+            sub_category: groupBy(products, 'sub_category'),
+
+        });
     } catch (error) {
         res.status(400).json({ message: error.message });
     }
