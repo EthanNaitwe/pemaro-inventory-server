@@ -66,6 +66,7 @@ async function addSalesBulk(req, res) {
             due: 0,
             user_id: req.user.id,
             date: DateTime.now().toFormat('dd/MM/yyyy'),
+            payment_method: sale.payment_method,
         })));
 
         res.status(201).json({ message: "Sales added successfully" });
