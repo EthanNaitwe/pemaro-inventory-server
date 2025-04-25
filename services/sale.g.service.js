@@ -56,6 +56,28 @@ async function addSale(saleData) {
     return response.data;
 }
 
+// Add multiple sales at once (bulk create)
+async function addSalesBulk(salesDataArray) {
+    if (!Array.isArray(salesDataArray) || salesDataArray.length === 0) {
+        throw new Error('Sales data must be a non-empty array');
+    }
+
+    const sheets = await getSheetsClient();
+    
+    // Convert each sale data object to an array of values
+    const valuesArray = salesDataArray.map(saleData => Object.values(saleData));
+
+    const response = await sheets.spreadsheets.values.append({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `${SALES_SHEET}!A:Z`,
+        valueInputOption: "RAW",
+        insertDataOption: "INSERT_ROWS",
+        requestBody: { values: valuesArray },
+    });
+
+    return response.data;
+}
+
 // Update a sale (by row index)
 async function updateSale(rowIndex, saleData) {
     const sheets = await getSheetsClient();
@@ -85,4 +107,4 @@ async function deleteSale(rowIndex) {
     return response.data;
 }
 
-module.exports = { getAllSales, addSale, updateSale, deleteSale };
+module.exports = { getAllSales, addSale, addSalesBulk, updateSale, deleteSale };

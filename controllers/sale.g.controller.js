@@ -1,5 +1,6 @@
 const salesService = require("../services/sale.g.service");
 const { DateTime } = require("luxon");
+const SALES_SHEET = "Sales";
 
 // Get all sales
 async function getAllSales(req, res) {
@@ -41,6 +42,39 @@ async function addSale(req, res) {
     }
 }
 
+// Add sales in bulk
+async function addSalesBulk(req, res) {
+    try {
+        const salesDataArray = req.body;
+
+        // Validate input
+        if (!Array.isArray(salesDataArray) || salesDataArray.length === 0) {
+            return res.status(400).json({ error: "Sales data must be a non-empty array" });
+        }
+        if ((salesDataArray).every(sale => !sale.prod_id || !sale.amount || !sale.quantity)) {
+            return res.status(400).json({ error: "All fields are required" });
+        }
+
+        await salesService.addSalesBulk(salesDataArray.map(sale => ({
+            id: `SAL-${Date.now()}`,
+            productId: sale.prod_id,
+            quantity: sale.quantity,
+            status: 'Completed',
+            payment: 'Paid',
+            amount: sale.amount || 0,
+            paid: sale.amount || 0,
+            due: 0,
+            user_id: req.user.id,
+            date: DateTime.now().toFormat('dd/MM/yyyy'),
+        })));
+
+        res.status(201).json({ message: "Sales added successfully" });
+    } catch (error) {
+        console.error("Error adding sales in bulk:", error);
+        res.status(500).json({ error: "Failed to add sales in bulk" });
+    }
+}
+
 // Update a sale
 async function updateSale(req, res) {
     try {
@@ -66,4 +100,4 @@ async function deleteSale(req, res) {
     }
 }
 
-module.exports = { getAllSales, addSale, updateSale, deleteSale };
+module.exports = { getAllSales, addSale, addSalesBulk, updateSale, deleteSale };

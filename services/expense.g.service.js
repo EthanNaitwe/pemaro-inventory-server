@@ -7,7 +7,7 @@ const SHEET_NAME = "Expenses";
 // Fetch all expenses
 async function getAllExpenses() {
     const sheets = await getSheetsClient();
-    const range = `${SHEET_NAME}!A2:G`;
+    const range = `${SHEET_NAME}!A2:Z`;
 
     const response = await sheets.spreadsheets.values.get({
         spreadsheetId: SPREADSHEET_ID,
@@ -23,13 +23,14 @@ async function getAllExpenses() {
         status: row[4] || "",
         amount: parseFloat(row[5]) || 0,
         description: row[6] || "",
+        user_id: row[7] || "",
     }));
 }
 
 // Add a new expense
 async function addExpense(expense) {
     const sheets = await getSheetsClient();
-    const range = `${SHEET_NAME}!A2:G`;
+    const range = `${SHEET_NAME}!A2:Z`;
     const refNo = `PT00${(await getAllExpenses()).length + 1}`;
 
     const status = "Active";
@@ -37,8 +38,8 @@ async function addExpense(expense) {
     const date = DateTime.now().toFormat('dd/MM/yyyy');
 
     const values = [[
-        expenseId, expense.category, refNo, date,
-        status, expense.amount, expense.description
+        expenseId, expense.category, refNo, date, status,
+        expense.amount, expense.description, expense.user_id
     ]];
 
     await sheets.spreadsheets.values.append({

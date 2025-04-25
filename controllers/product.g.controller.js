@@ -25,7 +25,7 @@ exports.addProductG = async (req, res) => {
 
 exports.fetchAllProductsG = async (req, res) => {
     try {
-        const products = await productService.fetchAllProductsG();
+        const products = (await productService.fetchAllProductsG()).map((product, index) => ({ ...product, index }));
         res.status(200).json({
             products,
             food_category: groupBy(products, 'food_category'),

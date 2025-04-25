@@ -13,7 +13,7 @@ exports.getAllExpenses = async (req, res) => {
 // Add a new expense
 exports.addExpense = async (req, res) => {
     try {
-        const newExpense = await expenseService.addExpense(req.body);
+        const newExpense = await expenseService.addExpense({ ...req.body, user_id: req.user.id });
         res.status(201).json(newExpense);
     } catch (error) {
         res.status(500).json({ message: error.message });
