@@ -96,7 +96,7 @@ async function getUserProfile(userId) {
 async function getAllUsers() {
     try {
         const sheets = await getSheetsClient();
-        const range = "Users!A2:K"; // Adjust range to cover user data
+        const range = "Users!A2:L"; // Adjust range to cover user data
 
         const response = await sheets.spreadsheets.values.get({
             spreadsheetId: SPREADSHEET_ID,
@@ -121,6 +121,7 @@ async function getAllUsers() {
             address: row[7],
             phone_number: row[8],
             role: row[10],
+            is_active: row[11] === "TRUE" // Convert string "TRUE"/"FALSE" to boolean,
         }));
 
         return users;
