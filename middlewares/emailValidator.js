@@ -4,10 +4,8 @@ exports.validateProduct = (data) => {
     const schema = Joi.object({
         name: Joi.string().required(),
         // artNumber: Joi.string().required(),
-        artNumber: Joi.string().required(),
-        category: Joi.string().required(),
-        'sub-category': Joi.string().required(),
-        price: Joi.number().integer().min(1).required(),
+        minimum_price: Joi.number().integer().min(1).required(),
+        purchasing_price: Joi.number().integer().min(1).required(),
         imageUrl: Joi.string().uri().optional(),
         description: Joi.string().optional(),
     });

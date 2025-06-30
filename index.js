@@ -7,6 +7,7 @@ const winston = require('winston');
 const userRoutes = require('./routes/user.g.routes');
 const productRoutes = require('./routes/product.g.routes');
 const saleRoutes = require('./routes/sale.g.routes');
+const settingsRoutes = require('./routes/settings.g.routes');
 const expenseRoutes = require("./routes/expense.g.routes");
 
 require('dotenv').config();
@@ -52,6 +53,7 @@ app.get('/', (req, res) => {
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/products', productRoutes);
 app.use('/api/v1/sales', saleRoutes);
+app.use('/api/v1/settings', settingsRoutes);
 app.use("/api/v1/expenses", expenseRoutes);
 
 
