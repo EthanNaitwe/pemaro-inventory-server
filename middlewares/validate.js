@@ -2,6 +2,56 @@
 
 const Joi = require('joi');
 
+// Joi validation schema for Contact Us form
+const messageSchema = Joi.object({
+    name: Joi.string().min(3).max(30).required().messages({
+        'string.base': '"name" should be a type of text',
+        'string.min': '"name" should have a minimum length of 3 characters',
+        'string.max': '"name" should have a maximum length of 30 characters',
+        'any.required': '"name" is required'
+    }),
+    subject: Joi.string().min(3).max(30).required().messages({
+        'string.base': '"subject" should be a type of text',
+        'string.min': '"subject" should have a minimum length of 3 characters',
+        'string.max': '"subject" should have a maximum length of 30 characters',
+        'any.required': '"subject" is required'
+    }),
+    email: Joi.string().email().required().messages({
+        'string.base': '"email" should be a type of text',
+        'string.empty': '"email" cannot be empty',
+        'string.email': '"email" should be a valid email address',
+        'any.required': '"email" is required'
+    }),
+    message: Joi.string().min(3).max(30).required().messages({
+        'string.base': '"message" should be a type of text',
+        'string.min': '"message" should have a minimum length of 3 characters',
+        'string.max': '"message" should have a maximum length of 30 characters',
+        'any.required': '"message" is required'
+    }),
+    sheet: Joi.string().min(3).max(30).required().messages({
+        'string.base': '"sheet name" should be a type of text',
+        'string.min': '"sheet name" should have a minimum length of 3 characters',
+        'string.max': '"sheet name" should have a maximum length of 30 characters',
+        'any.required': '"sheet name" is required'
+    }),
+});
+
+// Joi validation schema for user subscription
+const emailSchema = Joi.object({
+    email: Joi.string().email().required().messages({
+        'string.base': '"email" should be a type of text',
+        'string.empty': '"email" cannot be empty',
+        'string.email': '"email" should be a valid email address',
+        'any.required': '"email" is required'
+    }),
+    sheet: Joi.string().min(3).max(30).required().messages({
+        'string.base': '"sheet name" should be a type of text',
+        'string.min': '"sheet name" should have a minimum length of 3 characters',
+        'string.max': '"sheet name" should have a maximum length of 30 characters',
+        'any.required': '"sheet name" is required'
+    }),
+});
+
 // Joi validation schema for user registration
 const registerSchema = Joi.object({
     surname: Joi.string().min(3).max(30).required().messages({
@@ -85,4 +135,4 @@ const validate = (schema) => {
     };
 }
 
-module.exports = { registerSchema, loginSchema, validate };
+module.exports = { registerSchema, loginSchema, emailSchema, messageSchema, validate };

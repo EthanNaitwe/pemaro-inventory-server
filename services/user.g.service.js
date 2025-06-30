@@ -10,7 +10,7 @@ const JWT_SECRET = process.env.JWT_SECRET; // Ensure this is set in your .env fi
 async function loginUser(email, password) {
     try {
         const sheets = await getSheetsClient();
-        const range = "Users!A2:K"; // Adjust range to cover user data
+        const range = "Users!A2:L"; // Adjust range to cover user data
 
         const response = await sheets.spreadsheets.values.get({
             spreadsheetId: SPREADSHEET_ID,
@@ -37,6 +37,7 @@ async function loginUser(email, password) {
             phone_number: userRow[8],
             password: userRow[9], // Hashed password
             role: userRow[10],
+            is_active: userRow[11] === "TRUE" // Convert string "TRUE"/"FALSE" to boolean,
         };
 
         // Validate password
@@ -58,7 +59,7 @@ async function loginUser(email, password) {
 async function getUserProfile(userId) {
     try {
         const sheets = await getSheetsClient();
-        const range = "Users!A2:K"; // Adjust range to cover user data
+        const range = "Users!A2:L"; // Adjust range to cover user data
 
         const response = await sheets.spreadsheets.values.get({
             spreadsheetId: SPREADSHEET_ID,
@@ -83,6 +84,7 @@ async function getUserProfile(userId) {
             address: userRow[7],
             phone_number: userRow[8],
             role: userRow[10],
+            is_active: userRow[11] === "TRUE" // Convert string "TRUE"/"FALSE" to boolean,
         };
     } catch (error) {
         console.error("Error fetching user profile:", error);
@@ -96,7 +98,7 @@ async function getUserProfile(userId) {
 async function getAllUsers() {
     try {
         const sheets = await getSheetsClient();
-        const range = "Users!A2:K"; // Adjust range to cover user data
+        const range = "Users!A2:L"; // Adjust range to cover user data
 
         const response = await sheets.spreadsheets.values.get({
             spreadsheetId: SPREADSHEET_ID,
@@ -121,6 +123,7 @@ async function getAllUsers() {
             address: row[7],
             phone_number: row[8],
             role: row[10],
+            is_active: row[11] === "TRUE" // Convert string "TRUE"/"FALSE" to boolean,
         }));
 
         return users;
