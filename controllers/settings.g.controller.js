@@ -7,15 +7,16 @@ async function getAllSettings(req, res) {
         const data = await settingsService.getAllSettings();
 
         // Convert string "TRUE"/"FALSE" to actual booleans
-        const settings = Object.fromEntries(
-            Object.entries(data[0]).map(([key, value]) => {
-                if (value === "TRUE") return [key, true];
-                if (value === "FALSE") return [key, false];
-                return [key, value];
-            })
-        );
+        // const settings = Object.fromEntries(
+        //     Object.entries(data[0]).map(([key, value]) => {
+        //         if (value === "TRUE") return [key, true];
+        //         if (value === "FALSE") return [key, false];
+        //         return [key, value];
+        //     })
+        // );
 
-        res.status(200).json({ message: "Settings fetched successfully", settings });
+        // res.status(200).json({ message: "Settings fetched successfully", settings });
+        res.status(200).json({ message: "Settings fetched successfully" });
     } catch (error) {
         console.error("Error fetching settings:", error);
         res.status(500).json({ error: "Failed to retrieve settings" + error.message });
