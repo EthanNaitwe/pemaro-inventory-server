@@ -18,7 +18,7 @@ async function getAllSettings(req, res) {
         res.status(200).json({ message: "Settings fetched successfully", settings });
     } catch (error) {
         console.error("Error fetching settings:", error);
-        res.status(500).json({ error: "Failed to retrieve settings" });
+        res.status(500).json({ error: "Failed to retrieve settings" + error.message });
     }
 }
 
