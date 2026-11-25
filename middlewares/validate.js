@@ -16,16 +16,20 @@ const messageSchema = Joi.object({
         'string.max': '"subject" should have a maximum length of 30 characters',
         'any.required': '"subject" is required'
     }),
+    phone: Joi.string().pattern(/^2567\d{8}$/).messages({
+        'string.base': '"phone" should be a type of text',
+        'string.pattern.base': '"phone" should be a valid Ugandan phone number starting with 2567',
+    }),
     email: Joi.string().email().required().messages({
         'string.base': '"email" should be a type of text',
         'string.empty': '"email" cannot be empty',
         'string.email': '"email" should be a valid email address',
         'any.required': '"email" is required'
     }),
-    message: Joi.string().min(3).max(30).required().messages({
+    message: Joi.string().min(3).max(200).required().messages({
         'string.base': '"message" should be a type of text',
         'string.min': '"message" should have a minimum length of 3 characters',
-        'string.max': '"message" should have a maximum length of 30 characters',
+        'string.max': '"message" should have a maximum length of 200 characters',
         'any.required': '"message" is required'
     }),
     sheet: Joi.string().min(3).max(30).required().messages({

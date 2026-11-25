@@ -1,41 +1,44 @@
-const { getSheetsClient, SPREADSHEET_ID } = require("../config/googleSheets");
+const prisma = require("../config/prisma");
 
-const SETTINGS_SHEET = "Settings"; // Change this to match your sheet's name
+// Settings the frontend reads (systemSettings). Used when a key isn't stored yet.
+const DEFAULT_SETTINGS = {
+    showAddProduct: true,
+    showEditProduct: true,
+    storeName: "",
+    address1: "",
+    address2: "",
+};
 
-// Get all Settngs
+// Values are stored as text; turn "true"/"false" back into booleans.
+const parse = (value) => {
+    const v = String(value).toLowerCase();
+    if (v === "true") return true;
+    if (v === "false") return false;
+    return value;
+};
+
+// Get all settings as a { key: value } object, defaults filled in
 async function getAllSettings() {
-    const sheets = await getSheetsClient();
-    const settingResponse = await sheets.spreadsheets.values.get({
-        spreadsheetId: SPREADSHEET_ID,
-        range: `${SETTINGS_SHEET}!A:Z`, // Fetch all columns
-    });
-
-    const settingRows = settingResponse.data.values || [];
-
-    const headers = settingRows[0]; // Extract column headers
-    return settingRows.slice(1).map((row) => {
-        let setting = {};
-        headers.forEach((header, index) => {
-            setting[header] = row[index] || "";
-        });
-        return setting;
-    });
+    const rows = await prisma.setting.findMany();
+    return {
+        ...DEFAULT_SETTINGS,
+        ...Object.fromEntries(rows.map((r) => [r.key, parse(r.value)])),
+    };
 }
 
-// Update a setting (by row index)
-async function updateSetting(rowIndex, settingData) {
-    const sheets = await getSheetsClient();
-    const values = Object.values(settingData);
-
-    const rowRange = `${SETTINGS_SHEET}!A${rowIndex + 2}:Z${rowIndex + 2}`; // Adjust for header row
-    const response = await sheets.spreadsheets.values.update({
-        spreadsheetId: SPREADSHEET_ID,
-        range: rowRange,
-        valueInputOption: "RAW",
-        requestBody: { values: [values] },
-    });
-
-    return response.data;
+// Upsert each key in settingData
+async function updateSetting(settingData = {}) {
+    const entries = Object.entries(settingData);
+    await prisma.$transaction(
+        entries.map(([key, value]) =>
+            prisma.setting.upsert({
+                where: { key },
+                create: { key, value: String(value) },
+                update: { value: String(value) },
+            })
+        )
+    );
+    return { updated: entries.length };
 }
 
-module.exports = { getAllSettings, updateSetting };
+module.exports = { getAllSettings, updateSetting, DEFAULT_SETTINGS };

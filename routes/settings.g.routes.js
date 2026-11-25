@@ -7,6 +7,6 @@ const { validate, emailSchema, messageSchema } = require('../middlewares/validat
 router.get('/', settingController.getAllSettings);
 router.post('/subscribe', validate(emailSchema), settingController.saveSubscriber);
 router.post('/message', validate(messageSchema), settingController.saveContactUsMessage);
-router.put('/', settingController.updateSetting);
+router.put('/', authMiddleware, settingController.updateSetting);
 
 module.exports = router;

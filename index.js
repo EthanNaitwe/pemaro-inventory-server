@@ -29,7 +29,8 @@ const logger = winston.createLogger({
                 winston.format.simple()
             ),
         }),
-        new winston.transports.File({ filename: 'activity.log' })
+        // Vercel's filesystem is read-only, so only log to a file locally.
+        ...(process.env.VERCEL ? [] : [new winston.transports.File({ filename: 'activity.log' })]),
     ]
 });
 
@@ -56,15 +57,5 @@ app.use('/api/v1/sales', saleRoutes);
 app.use('/api/v1/settings', settingsRoutes);
 app.use("/api/v1/expenses", expenseRoutes);
 
-
-// // Sync Sequelize models and start the server
-// db.sequelize.sync({ alter: true })
-//     .then(() => {
-//         app.listen(PORT, () => {
-//             console.log(`Server running on port ${PORT}`);
-//         });
-//         // app(req, res);  // This allows Express to handle the request
-//     })
-//     .catch(err => console.error('Error syncing database:', err));
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
