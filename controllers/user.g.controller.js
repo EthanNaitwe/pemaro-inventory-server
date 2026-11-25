@@ -55,3 +55,38 @@ exports.getAllUsers = async (req, res) => {
         res.status(500).json({ success: false, message: error.message });
     }
 };
+
+const passwordService = require('../services/password.service');
+const { sendError } = require('../config/http');
+
+// POST /users/change-password  { currentPassword, newPassword }  (auth)
+exports.changePassword = async (req, res) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+        const { token } = await passwordService.changePassword(req.user.id, currentPassword, newPassword);
+        res.status(200).json({ message: "Password changed successfully", token });
+    } catch (error) {
+        sendError(res, error, { fallback: "Failed to change password" });
+    }
+};
+
+// POST /users/forgot-password  { email }
+exports.forgotPassword = async (req, res) => {
+    try {
+        await passwordService.requestPasswordReset(req.body.email);
+        // Same answer whether or not the account exists.
+        res.status(200).json({ message: "If that email belongs to an account, a reset link has been sent." });
+    } catch (error) {
+        sendError(res, error, { fallback: "Failed to send reset email" });
+    }
+};
+
+// POST /users/reset-password  { token, newPassword }
+exports.resetPassword = async (req, res) => {
+    try {
+        await passwordService.resetPassword(req.body.token, req.body.newPassword);
+        res.status(200).json({ message: "Password reset successfully. You can now log in." });
+    } catch (error) {
+        sendError(res, error, { fallback: "Failed to reset password" });
+    }
+};

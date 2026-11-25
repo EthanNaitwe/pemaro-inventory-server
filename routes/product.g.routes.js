@@ -7,7 +7,12 @@ const router = express.Router();
 
 router.post('/', authMiddleware, productController.addProductG);
 router.get('/', authMiddleware, productController.fetchAllProductsG);
+router.get('/categories', authMiddleware, productController.getCategories);
 router.get('/art/:artNumber', authMiddleware, productController.getProductByArtNumberG);
+
+// Stock
+router.post('/:productId/stock', authMiddleware, productController.adjustStock);
+router.get('/:productId/stock', authMiddleware, productController.getStockMovements);
 
 
 // Variant Routes

@@ -1,74 +1,93 @@
-const { DateTime } = require("luxon");
 const prisma = require("../config/prisma");
-const { createWithNextCode } = require("../config/sequence");
+const { nextExpenseRef } = require("../config/sequence");
+const { money, displayDate, parseDate, expenseStatus, HttpError } = require("../config/format");
 
 const toExpense = (e) => ({
     id: e.id,
-    category: e.category || "",
+    category: e.category.name,
     ref: e.ref,
-    date: e.date || "",
-    status: e.status || "",
-    amount: e.amount,
+    date: displayDate(e.spentAt),
+    status: expenseStatus.toApi(e.status),
+    amount: money(e.amount),
     description: e.description || "",
-    user_id: e.userId || "",
+    user_id: e.userId,
 });
 
-// Fetch all expenses
+async function findCategory(name) {
+    const category = await prisma.expenseCategory.findUnique({ where: { name: String(name || "") } });
+    if (!category) throw new HttpError(400, `Unknown expense category "${name}"`);
+    return category;
+}
+
+const parseAmount = (value) => {
+    const amount = Number(value);
+    if (!Number.isFinite(amount) || amount <= 0) throw new HttpError(400, "amount must be a positive number");
+    return amount;
+};
+
 async function getAllExpenses() {
-    const expenses = await prisma.expense.findMany({ orderBy: { createdAt: "asc" } });
+    const expenses = await prisma.expense.findMany({
+        where: { deletedAt: null },
+        include: { category: true },
+        orderBy: { spentAt: "desc" },
+    });
     return expenses.map(toExpense);
 }
 
-// Add a new expense
 async function addExpense(expense) {
-    // Refs keep the original "PT00<n>" format; n continues from the highest ref.
-    await createWithNextCode({
-        prefix: "PT00",
-        loadCodes: async () => (await prisma.expense.findMany({ select: { ref: true } })).map((e) => e.ref),
-        create: (ref) =>
-            prisma.expense.create({
-                data: {
-                    id: `EXP-${Date.now()}`,
-                    category: expense.category,
-                    ref,
-                    date: DateTime.now().toFormat("dd/MM/yyyy"),
-                    status: "Active",
-                    amount: Number(expense.amount) || 0,
-                    description: expense.description,
-                    userId: expense.user_id,
-                },
-            }),
-    });
+    const category = await findCategory(expense.category);
+    const amount = parseAmount(expense.amount);
 
-    return { message: "Expense added successfully", expense };
+    const created = await prisma.$transaction(async (tx) =>
+        tx.expense.create({
+            data: {
+                ref: await nextExpenseRef(tx),
+                categoryId: category.id,
+                amount,
+                description: expense.description || null,
+                spentAt: parseDate(expense.date) || new Date(),
+                userId: expense.user_id,
+            },
+            include: { category: true },
+        })
+    );
+
+    return { message: "Expense added successfully", expense: toExpense(created) };
 }
 
-// Update an expense by reference
 async function updateExpense(ref, updatedExpense) {
-    const existing = await prisma.expense.findUnique({ where: { ref } });
-    if (!existing) throw new Error("Expense not found");
+    const existing = await prisma.expense.findFirst({ where: { ref, deletedAt: null } });
+    if (!existing) throw new HttpError(404, "Expense not found");
 
     const { category, date, status, amount, description } = updatedExpense;
-    await prisma.expense.update({
-        where: { ref },
+    let status_;
+    try {
+        status_ = status === undefined ? undefined : expenseStatus.fromApi(status);
+    } catch {
+        throw new HttpError(400, `Invalid status "${status}"`);
+    }
+
+    const updated = await prisma.expense.update({
+        where: { id: existing.id },
         data: {
-            category,
-            date,
-            status,
-            amount: amount === undefined ? undefined : Number(amount) || 0,
+            categoryId: category === undefined ? undefined : (await findCategory(category)).id,
+            spentAt: date === undefined ? undefined : parseDate(date),
+            status: status_,
+            amount: amount === undefined ? undefined : parseAmount(amount),
             description,
         },
+        include: { category: true },
     });
 
-    return { message: "Expense updated successfully", updatedExpense };
+    return { message: "Expense updated successfully", updatedExpense: toExpense(updated) };
 }
 
-// Delete an expense by reference
+// Soft delete: the row stays for the audit trail but disappears from lists.
 async function deleteExpense(ref) {
-    const existing = await prisma.expense.findUnique({ where: { ref } });
-    if (!existing) throw new Error("Expense not found");
+    const existing = await prisma.expense.findFirst({ where: { ref, deletedAt: null } });
+    if (!existing) throw new HttpError(404, "Expense not found");
 
-    await prisma.expense.delete({ where: { ref } });
+    await prisma.expense.update({ where: { id: existing.id }, data: { deletedAt: new Date(), status: "VOID" } });
     return { message: "Expense deleted successfully" };
 }
 

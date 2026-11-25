@@ -1,103 +1,63 @@
 const salesService = require("../services/sale.g.service");
-const { DateTime } = require("luxon");
+const { sendError } = require("../config/http");
 
-// Get all sales
+// Get all sales (one row per sale line)
 async function getAllSales(req, res) {
     try {
         const sales = await salesService.getAllSales();
         res.status(200).json({ message: "Sales fetched successfully", sales });
     } catch (error) {
-        console.error("Error fetching sales:", error);
-        res.status(500).json({ error: "Failed to retrieve sales" });
+        sendError(res, error, { key: "error", fallback: "Failed to retrieve sales" });
     }
 }
 
-// Add a new sale
+// Single-product sale: POST /sales/:prodId/product
 async function addSale(req, res) {
     try {
         const { prodId } = req.params;
-        const { artNumber, amount, quantity } = req.body;
+        const { quantity, payment_method, variant_id, amount_paid } = req.body;
 
-        if (!quantity || !artNumber)
-            return res.status(400).json({ message: "All fields are required." });
+        if (!quantity) return res.status(400).json({ message: "All fields are required." });
 
-        await salesService.addSale(
-            {
-                id: `SAL-${Date.now()}`,
-                productId: prodId,
-                quantity,
-                status: 'Completed',
-                payment: 'Paid',
-                amount,
-                paid: amount,
-                due: 0,
-                user_id: req.user.id,
-                date: DateTime.now().toFormat('dd/MM/yyyy'),
-            });
-        res.status(201).json({ message: "Sale added successfully" });
+        const sale = await salesService.createSale({
+            userId: req.user.id,
+            paymentMethod: payment_method,
+            amountPaid: amount_paid,
+            items: [{ productId: prodId, quantity, variantId: variant_id }],
+        });
+        res.status(201).json({ message: "Sale added successfully", sale });
     } catch (error) {
-        console.error("Error adding sale:", error);
-        res.status(500).json({ error: "Failed to add sale" });
+        sendError(res, error, { fallback: "Failed to add sale" });
     }
 }
 
-// Add sales in bulk
+// Checkout with several lines (one receipt): POST /sales/product
+// Body: [{ prod_id, quantity, payment_method, variant_id? }, ...]
 async function addSalesBulk(req, res) {
     try {
-        const salesDataArray = req.body;
+        const lines = req.body;
 
-        // Validate input
-        if (!Array.isArray(salesDataArray) || salesDataArray.length === 0) {
+        if (!Array.isArray(lines) || lines.length === 0) {
             return res.status(400).json({ error: "Sales data must be a non-empty array" });
         }
-        if ((salesDataArray).every(sale => !sale.prod_id || !sale.amount || !sale.quantity)) {
+        if (lines.some((line) => !line.prod_id || !line.quantity)) {
             return res.status(400).json({ error: "All fields are required" });
         }
 
-        const now = Date.now();
-        await salesService.addSalesBulk(salesDataArray.map((sale, i) => ({
-            id: `SAL-${now}-${i}`,
-            productId: sale.prod_id,
-            quantity: sale.quantity,
-            status: 'Completed',
-            payment: 'Paid',
-            amount: sale.amount || 0,
-            paid: sale.amount || 0,
-            due: 0,
-            user_id: req.user.id,
-            date: DateTime.now().toFormat('dd/MM/yyyy'),
-            payment_method: sale.payment_method,
-        })));
+        const sale = await salesService.createSale({
+            userId: req.user.id,
+            paymentMethod: lines.find((l) => l.payment_method)?.payment_method,
+            items: lines.map((line) => ({
+                productId: line.prod_id,
+                quantity: line.quantity,
+                variantId: line.variant_id,
+            })),
+        });
 
-        res.status(201).json({ message: "Sales added successfully" });
+        res.status(201).json({ message: "Sales added successfully", sale });
     } catch (error) {
-        console.error("Error adding sales in bulk:", error);
-        res.status(500).json({ error: "Failed to add sales in bulk" });
+        sendError(res, error, { key: "error", fallback: "Failed to add sales" });
     }
 }
 
-// Update a sale
-async function updateSale(req, res) {
-    try {
-        const { id } = req.params;
-        await salesService.updateSale(id, req.body);
-        res.status(200).json({ message: "Sale updated successfully" });
-    } catch (error) {
-        console.error("Error updating sale:", error);
-        res.status(500).json({ error: "Failed to update sale" });
-    }
-}
-
-// Delete a sale
-async function deleteSale(req, res) {
-    try {
-        const { id } = req.params;
-        await salesService.deleteSale(id);
-        res.status(200).json({ message: "Sale deleted successfully" });
-    } catch (error) {
-        console.error("Error deleting sale:", error);
-        res.status(500).json({ error: "Failed to delete sale" });
-    }
-}
-
-module.exports = { getAllSales, addSale, addSalesBulk, updateSale, deleteSale };
+module.exports = { getAllSales, addSale, addSalesBulk };

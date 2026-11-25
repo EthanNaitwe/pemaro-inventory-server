@@ -1,9 +1,29 @@
 const prisma = require("../config/prisma");
 
-// Get all settings as a { key: value } object
+// Settings the frontend reads (systemSettings). Used when a key isn't stored yet.
+const DEFAULT_SETTINGS = {
+    showAddProduct: true,
+    showEditProduct: true,
+    storeName: "",
+    address1: "",
+    address2: "",
+};
+
+// Values are stored as text; turn "true"/"false" back into booleans.
+const parse = (value) => {
+    const v = String(value).toLowerCase();
+    if (v === "true") return true;
+    if (v === "false") return false;
+    return value;
+};
+
+// Get all settings as a { key: value } object, defaults filled in
 async function getAllSettings() {
     const rows = await prisma.setting.findMany();
-    return Object.fromEntries(rows.map((r) => [r.key, r.value]));
+    return {
+        ...DEFAULT_SETTINGS,
+        ...Object.fromEntries(rows.map((r) => [r.key, parse(r.value)])),
+    };
 }
 
 // Upsert each key in settingData
@@ -21,4 +41,4 @@ async function updateSetting(settingData = {}) {
     return { updated: entries.length };
 }
 
-module.exports = { getAllSettings, updateSetting };
+module.exports = { getAllSettings, updateSetting, DEFAULT_SETTINGS };
