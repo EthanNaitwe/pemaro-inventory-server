@@ -1,110 +1,75 @@
-const { getSheetsClient, SPREADSHEET_ID } = require("../config/googleSheets");
+const prisma = require("../config/prisma");
 
-const SALES_SHEET = "Sales"; // Change this to match your sheet's name
-const PRODUCTS_SHEET = "Products"; // Change this to match your sheet's name
+const toSale = (s, product) => ({
+    id: s.id,
+    productId: s.productId,
+    quantity: s.quantity,
+    color: s.color,
+    size: s.size,
+    reference: s.reference,
+    status: s.status,
+    payment: s.payment,
+    amount: s.amount,
+    paid: s.paid,
+    due: s.due,
+    user_id: s.userId,
+    date: s.date,
+    payment_method: s.paymentMethod,
+    // Kept for compatibility: the frontend expects the product object here.
+    artNumber: product
+        ? { id: product.id, name: product.name, artNumber: product.artNumber }
+        : undefined,
+});
+
+const toData = (sale) => ({
+    id: sale.id,
+    productId: sale.productId ?? null,
+    quantity: parseInt(sale.quantity, 10) || 0,
+    color: sale.color ?? null,
+    size: sale.size ?? null,
+    reference: sale.reference ?? null,
+    status: sale.status ?? null,
+    payment: sale.payment ?? null,
+    amount: Number(sale.amount) || 0,
+    paid: Number(sale.paid) || 0,
+    due: Number(sale.due) || 0,
+    userId: sale.user_id ?? null,
+    date: sale.date ?? null,
+    paymentMethod: sale.payment_method ?? null,
+});
 
 // Get all sales
 async function getAllSales() {
-    const sheets = await getSheetsClient();
-    const saleResponse = await sheets.spreadsheets.values.get({
-        spreadsheetId: SPREADSHEET_ID,
-        range: `${SALES_SHEET}!A:Z`, // Fetch all columns
-    });
-
-    // Fetch products
-    const productResponse = await sheets.spreadsheets.values.get({
-        spreadsheetId: SPREADSHEET_ID,
-        range: `${PRODUCTS_SHEET}!A2:F`,
-    });
-
-
-    const saleRows = saleResponse.data.values || [];
-    const productRows = productResponse.data.values || [];
-
-
-    // Convert rows into an array of objects
-    const products = productRows.map(row => ({
-        id: row[0],
-        name: row[1],
-        artNumber: row[2],
-    }));
-
-    const headers = saleRows[0]; // Extract column headers
-    return saleRows.slice(1).map((row) => {
-        let sale = {};
-        headers.forEach((header, index) => {
-            sale[header] = row[index] || "";
-            sale.artNumber = products.find(prod => prod.id === row[1]);
-        });
-        return sale;
-    });
+    const [sales, products] = await Promise.all([
+        prisma.sale.findMany({ orderBy: { createdAt: "asc" } }),
+        prisma.product.findMany({ select: { id: true, name: true, artNumber: true } }),
+    ]);
+    const byId = new Map(products.map((p) => [p.id, p]));
+    return sales.map((s) => toSale(s, byId.get(s.productId)));
 }
 
 // Add a new sale
 async function addSale(saleData) {
-    const sheets = await getSheetsClient();
-    const values = Object.values(saleData);
-
-    const response = await sheets.spreadsheets.values.append({
-        spreadsheetId: SPREADSHEET_ID,
-        range: `${SALES_SHEET}!A:Z`,
-        valueInputOption: "RAW",
-        insertDataOption: "INSERT_ROWS",
-        requestBody: { values: [values] },
-    });
-
-    return response.data;
+    return prisma.sale.create({ data: toData(saleData) });
 }
 
 // Add multiple sales at once (bulk create)
 async function addSalesBulk(salesDataArray) {
     if (!Array.isArray(salesDataArray) || salesDataArray.length === 0) {
-        throw new Error('Sales data must be a non-empty array');
+        throw new Error("Sales data must be a non-empty array");
     }
-
-    const sheets = await getSheetsClient();
-    
-    // Convert each sale data object to an array of values
-    const valuesArray = salesDataArray.map(saleData => Object.values(saleData));
-
-    const response = await sheets.spreadsheets.values.append({
-        spreadsheetId: SPREADSHEET_ID,
-        range: `${SALES_SHEET}!A:Z`,
-        valueInputOption: "RAW",
-        insertDataOption: "INSERT_ROWS",
-        requestBody: { values: valuesArray },
-    });
-
-    return response.data;
+    return prisma.sale.createMany({ data: salesDataArray.map(toData) });
 }
 
-// Update a sale (by row index)
-async function updateSale(rowIndex, saleData) {
-    const sheets = await getSheetsClient();
-    const values = Object.values(saleData);
-
-    const rowRange = `${SALES_SHEET}!A${rowIndex + 2}:Z${rowIndex + 2}`; // Adjust for header row
-    const response = await sheets.spreadsheets.values.update({
-        spreadsheetId: SPREADSHEET_ID,
-        range: rowRange,
-        valueInputOption: "RAW",
-        requestBody: { values: [values] },
-    });
-
-    return response.data;
+// Update a sale by id
+async function updateSale(id, saleData) {
+    const { id: _ignored, ...data } = toData({ ...saleData, id });
+    return prisma.sale.update({ where: { id }, data });
 }
 
-// Delete a sale (by clearing row)
-async function deleteSale(rowIndex) {
-    const sheets = await getSheetsClient();
-    const rowRange = `${SALES_SHEET}!A${rowIndex + 2}:Z${rowIndex + 2}`;
-
-    const response = await sheets.spreadsheets.values.clear({
-        spreadsheetId: SPREADSHEET_ID,
-        range: rowRange,
-    });
-
-    return response.data;
+// Delete a sale by id
+async function deleteSale(id) {
+    return prisma.sale.delete({ where: { id } });
 }
 
 module.exports = { getAllSales, addSale, addSalesBulk, updateSale, deleteSale };

@@ -1,0 +1,135 @@
+// Prisma schema for the Pemaro inventory server (Neon Postgres).
+// Field names mirror the JSON the API already returns; @map keeps
+// the database columns in snake_case.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String  @id
+  surname     String?
+  otherNames  String? @map("other_names")
+  avatar      String?
+  gender      String?
+  birthDate   String? @map("birth_date")
+  email       String  @unique
+  address     String?
+  phoneNumber String? @map("phone_number")
+  password    String
+  role        String?
+  isActive    Boolean @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model Product {
+  id              String  @id
+  name            String
+  artNumber       String? @unique @map("art_number")
+  purchasingPrice Float   @default(0) @map("purchasing_price")
+  minimumPrice    Float   @default(0) @map("minimum_price")
+  description     String?
+  foodCategory    String? @map("food_category")
+  subCategory     String? @map("sub_category")
+  food            String?
+
+  variants ProductVariant[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("products")
+}
+
+model ProductVariant {
+  id        String  @id
+  productId String  @map("product_id")
+  size      String?
+  color     String?
+  quantity  Int     @default(0)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([productId])
+  @@map("product_variants")
+}
+
+// productId is not a foreign key, so deleting a product keeps its sales history.
+model Sale {
+  id            String  @id
+  productId     String? @map("product_id")
+  quantity      Int     @default(0)
+  color         String?
+  size          String?
+  reference     String?
+  status        String?
+  payment       String?
+  amount        Float   @default(0)
+  paid          Float   @default(0)
+  due           Float   @default(0)
+  userId        String? @map("user_id")
+  date          String? // dd/MM/yyyy, as the frontend expects
+  paymentMethod String? @map("payment_method")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([productId])
+  @@map("sales")
+}
+
+model Expense {
+  id          String  @id
+  category    String?
+  ref         String  @unique
+  date        String? // dd/MM/yyyy
+  status      String?
+  amount      Float   @default(0)
+  description String?
+  userId      String? @map("user_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("expenses")
+}
+
+model Setting {
+  key   String @id
+  value String
+
+  @@map("settings")
+}
+
+// `list` is the `sheet` value the frontend sends (e.g. "Kisyanga Subscriptions").
+model Subscriber {
+  id        Int      @id @default(autoincrement())
+  email     String
+  list      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([email, list])
+  @@map("subscribers")
+}
+
+model ContactMessage {
+  id        Int      @id @default(autoincrement())
+  name      String?
+  email     String?
+  subject   String?
+  message   String?
+  list      String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("contact_messages")
+}

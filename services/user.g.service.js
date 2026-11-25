@@ -1,137 +1,61 @@
-const { getSheetsClient } = require('../config/googleSheets');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const prisma = require('../config/prisma');
 
-const SPREADSHEET_ID = process.env.GOOGLE_SHEETS_SPREADSHEET_ID;
 const JWT_SECRET = process.env.JWT_SECRET; // Ensure this is set in your .env file
 
+const toPublicUser = (u) => ({
+    id: u.id,
+    surname: u.surname,
+    other_names: u.otherNames,
+    avatar: u.avatar,
+    gender: u.gender,
+    birth_date: u.birthDate,
+    email: u.email,
+    address: u.address,
+    phone_number: u.phoneNumber,
+    role: u.role,
+    is_active: u.isActive,
+});
 
 // Function to authenticate user
 async function loginUser(email, password) {
     try {
-        const sheets = await getSheetsClient();
-        const range = "Users!A2:L"; // Adjust range to cover user data
+        const user = await prisma.user.findUnique({ where: { email: String(email).trim().toLowerCase() } });
+        if (!user) return { error: "Invalid credentials" };
 
-        const response = await sheets.spreadsheets.values.get({
-            spreadsheetId: SPREADSHEET_ID,
-            range: range,
-        });
-
-        const rows = response.data.values;
-        if (!rows || rows.length === 0) return { error: "No users found" };
-
-        // Find the user by email
-        const userRow = rows.find(row => row[6] === email);
-        if (!userRow) return { error: "Invalid credentials" };
-
-        // Extract user data
-        const user = {
-            id: userRow[0],
-            surname: userRow[1],
-            other_names: userRow[2],
-            avatar: userRow[3],
-            gender: userRow[4],
-            birth_date: userRow[5],
-            email: userRow[6],
-            address: userRow[7],
-            phone_number: userRow[8],
-            password: userRow[9], // Hashed password
-            role: userRow[10],
-            is_active: userRow[11] === "TRUE" // Convert string "TRUE"/"FALSE" to boolean,
-        };
-
-        // Validate password
         const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) return { error: "Invalid credentialz" };
+        if (!isMatch) return { error: "Invalid credentials" };
 
-        // Generate JWT token
         const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: "1h" });
 
-        return { token, user: { id: user.id, email: user.email, surname: user.surname, other_names: user.other_names } };
+        return { token, user: { id: user.id, email: user.email, surname: user.surname, other_names: user.otherNames } };
     } catch (error) {
         console.error("Error during login:", error);
         throw new Error("Login failed");
     }
 }
 
-
 // Function to fetch user profile
 async function getUserProfile(userId) {
     try {
-        const sheets = await getSheetsClient();
-        const range = "Users!A2:L"; // Adjust range to cover user data
-
-        const response = await sheets.spreadsheets.values.get({
-            spreadsheetId: SPREADSHEET_ID,
-            range: range,
-        });
-
-        const rows = response.data.values;
-        if (!rows || rows.length === 0) return null;
-
-        // Find user by ID
-        const userRow = rows.find(row => row[0] === userId);
-        if (!userRow) return null;
-
-        return {
-            id: userRow[0],
-            surname: userRow[1],
-            other_names: userRow[2],
-            avatar: userRow[3],
-            gender: userRow[4],
-            birth_date: userRow[5],
-            email: userRow[6],
-            address: userRow[7],
-            phone_number: userRow[8],
-            role: userRow[10],
-            is_active: userRow[11] === "TRUE" // Convert string "TRUE"/"FALSE" to boolean,
-        };
+        const user = await prisma.user.findUnique({ where: { id: String(userId) } });
+        return user ? toPublicUser(user) : null;
     } catch (error) {
         console.error("Error fetching user profile:", error);
         throw new Error("Failed to fetch user profile");
     }
 }
 
-/**
- * Fetch all users from the Google Sheet
- */
+// Fetch all users
 async function getAllUsers() {
     try {
-        const sheets = await getSheetsClient();
-        const range = "Users!A2:L"; // Adjust range to cover user data
-
-        const response = await sheets.spreadsheets.values.get({
-            spreadsheetId: SPREADSHEET_ID,
-            range: range,
-        });
-
-        const rows = response.data.values;
-
-        if (!rows || rows.length === 0) {
-            return [];
-        }
-
-        // Convert rows to objects
-        const users = rows.map(row => ({
-            id: row[0],
-            surname: row[1],
-            other_names: row[2],
-            avatar: row[3],
-            gender: row[4],
-            birth_date: row[5],
-            email: row[6],
-            address: row[7],
-            phone_number: row[8],
-            role: row[10],
-            is_active: row[11] === "TRUE" // Convert string "TRUE"/"FALSE" to boolean,
-        }));
-
-        return users;
+        const users = await prisma.user.findMany({ orderBy: { createdAt: "asc" } });
+        return users.map(toPublicUser);
     } catch (error) {
-        console.error("❌ Error fetching users:", error.response?.data || error);
-        throw new Error("Failed to retrieve users from the sheet");
+        console.error("❌ Error fetching users:", error);
+        throw new Error("Failed to retrieve users");
     }
 }
-
 
 module.exports = { loginUser, getUserProfile, getAllUsers };

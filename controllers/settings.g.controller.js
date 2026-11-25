@@ -1,4 +1,4 @@
-const { saveSubscriberEmail, isEmailSubscribed, saveMessageDetails } = require("../config/messagesSheets");
+const { saveSubscriberEmail, isEmailSubscribed, saveMessageDetails } = require("../services/message.g.service");
 const settingsService = require("../services/settings.g.service");
 
 // Get All Settings
@@ -26,9 +26,7 @@ async function getAllSettings(req, res) {
 // Update Settings
 async function updateSetting(req, res) {
     try {
-        const { rowIndex } = req.params;
-        const settingData = req.body;
-        await settingsService.updateSetting(parseInt(rowIndex), settingData);
+        await settingsService.updateSetting(req.body);
         res.status(200).json({ message: "Setting updated successfully" });
     } catch (error) {
         // console.error("Error updating setting:", error);

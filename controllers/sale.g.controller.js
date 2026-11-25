@@ -1,6 +1,5 @@
 const salesService = require("../services/sale.g.service");
 const { DateTime } = require("luxon");
-const SALES_SHEET = "Sales";
 
 // Get all sales
 async function getAllSales(req, res) {
@@ -55,8 +54,9 @@ async function addSalesBulk(req, res) {
             return res.status(400).json({ error: "All fields are required" });
         }
 
-        await salesService.addSalesBulk(salesDataArray.map(sale => ({
-            id: `SAL-${Date.now()}`,
+        const now = Date.now();
+        await salesService.addSalesBulk(salesDataArray.map((sale, i) => ({
+            id: `SAL-${now}-${i}`,
             productId: sale.prod_id,
             quantity: sale.quantity,
             status: 'Completed',
@@ -79,9 +79,8 @@ async function addSalesBulk(req, res) {
 // Update a sale
 async function updateSale(req, res) {
     try {
-        const { rowIndex } = req.params;
-        const saleData = req.body;
-        await salesService.updateSale(parseInt(rowIndex), saleData);
+        const { id } = req.params;
+        await salesService.updateSale(id, req.body);
         res.status(200).json({ message: "Sale updated successfully" });
     } catch (error) {
         console.error("Error updating sale:", error);
@@ -92,8 +91,8 @@ async function updateSale(req, res) {
 // Delete a sale
 async function deleteSale(req, res) {
     try {
-        const { rowIndex } = req.params;
-        await salesService.deleteSale(parseInt(rowIndex));
+        const { id } = req.params;
+        await salesService.deleteSale(id);
         res.status(200).json({ message: "Sale deleted successfully" });
     } catch (error) {
         console.error("Error deleting sale:", error);

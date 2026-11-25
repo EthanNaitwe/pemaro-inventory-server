@@ -1,42 +1,24 @@
-const { getSheetsClient, SPREADSHEET_ID } = require("../config/googleSheets");
+const prisma = require("../config/prisma");
 
-const SETTINGS_SHEET = "Settings"; // Change this to match your sheet's name
-
-// Get all Settngs
+// Get all settings as a { key: value } object
 async function getAllSettings() {
-    const sheets = await getSheetsClient();
-    // const settingResponse = await sheets.spreadsheets.values.get({
-    //     spreadsheetId: SPREADSHEET_ID,
-    //     range: `${SETTINGS_SHEET}!A:Z`, // Fetch all columns
-    // });
-
-    // const settingRows = settingResponse.data.values || [];
-
-    // const headers = settingRows[0]; // Extract column headers
-    // return settingRows.slice(1).map((row) => {
-    //     let setting = {};
-    //     headers.forEach((header, index) => {
-    //         setting[header] = row[index] || "";
-    //     });
-    //     return setting;
-    // });
-    return {};
+    const rows = await prisma.setting.findMany();
+    return Object.fromEntries(rows.map((r) => [r.key, r.value]));
 }
 
-// Update a setting (by row index)
-async function updateSetting(rowIndex, settingData) {
-    const sheets = await getSheetsClient();
-    const values = Object.values(settingData);
-
-    const rowRange = `${SETTINGS_SHEET}!A${rowIndex + 2}:Z${rowIndex + 2}`; // Adjust for header row
-    const response = await sheets.spreadsheets.values.update({
-        spreadsheetId: SPREADSHEET_ID,
-        range: rowRange,
-        valueInputOption: "RAW",
-        requestBody: { values: [values] },
-    });
-
-    return response.data;
+// Upsert each key in settingData
+async function updateSetting(settingData = {}) {
+    const entries = Object.entries(settingData);
+    await prisma.$transaction(
+        entries.map(([key, value]) =>
+            prisma.setting.upsert({
+                where: { key },
+                create: { key, value: String(value) },
+                update: { value: String(value) },
+            })
+        )
+    );
+    return { updated: entries.length };
 }
 
 module.exports = { getAllSettings, updateSetting };

@@ -1,25 +1,22 @@
-const { getSheetsClient, appendToSheet } = require('../config/googleSheets');
+const prisma = require("../config/prisma");
 
-const SPREADSHEET_ID = process.env.GOOGLE_SHEETS_SPREADSHEET_ID;
+// `list` is what the frontend sends as `sheet` (e.g. "Kisyanga Subscriptions").
 
-// Add a new product variant
-async function subscribe(email) {
-    try {
-        const sheets = await getSheetsClient();
-        const range = "ProductVariants!A2:E";
-
-        // Generate a unique ID (For simplicity, using timestamp)
-        const variantId = `VAR-${Date.now()}`;
-
-        const newVariant = [variantId, productId, size, color, quantity];
-
-        await appendToSheet(sheets, SPREADSHEET_ID, range, [newVariant]);
-
-        return { id: variantId, productId, size, color, quantity };
-    } catch (error) {
-        console.error("Error adding variant:", error);
-        throw new Error("Failed to add variant");
-    }
+async function isEmailSubscribed(email, list) {
+    const found = await prisma.subscriber.findUnique({
+        where: { email_list: { email, list: list || "" } },
+    });
+    return Boolean(found);
 }
 
-module.exports = { subscribe };
+async function saveSubscriberEmail(email, list) {
+    await prisma.subscriber.create({ data: { email, list: list || "" } });
+    return true;
+}
+
+async function saveMessageDetails(name, email, subject, message, list) {
+    await prisma.contactMessage.create({ data: { name, email, subject, message, list } });
+    return true;
+}
+
+module.exports = { saveSubscriberEmail, isEmailSubscribed, saveMessageDetails };

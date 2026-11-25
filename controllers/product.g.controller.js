@@ -10,11 +10,8 @@ exports.addProductG = async (req, res) => {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    const products = await productService.fetchAllProductsG();
-    const result = await productService.addProductG({
-      ...req.body,
-      artNumber: `WD${products.length + 1}`,
-    });
+    // The service assigns the next free art number (WD1, WD2, ...).
+    const result = await productService.addProductG(req.body);
 
     res.status(201).json(result);
   } catch (error) {

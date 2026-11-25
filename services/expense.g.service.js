@@ -1,53 +1,43 @@
 const { DateTime } = require("luxon");
-const { getSheetsClient } = require("../config/googleSheets");
+const prisma = require("../config/prisma");
+const { createWithNextCode } = require("../config/sequence");
 
-const SPREADSHEET_ID = process.env.GOOGLE_SHEETS_SPREADSHEET_ID;
-const SHEET_NAME = "Expenses";
+const toExpense = (e) => ({
+    id: e.id,
+    category: e.category || "",
+    ref: e.ref,
+    date: e.date || "",
+    status: e.status || "",
+    amount: e.amount,
+    description: e.description || "",
+    user_id: e.userId || "",
+});
 
 // Fetch all expenses
 async function getAllExpenses() {
-    const sheets = await getSheetsClient();
-    const range = `${SHEET_NAME}!A2:Z`;
-
-    const response = await sheets.spreadsheets.values.get({
-        spreadsheetId: SPREADSHEET_ID,
-        range,
-    });
-
-    const rows = response.data.values || [];
-    return rows.map(row => ({
-        id: row[0] || "",
-        category: row[1] || "",
-        ref: row[2] || "",
-        date: row[3] || "",
-        status: row[4] || "",
-        amount: parseFloat(row[5]) || 0,
-        description: row[6] || "",
-        user_id: row[7] || "",
-    }));
+    const expenses = await prisma.expense.findMany({ orderBy: { createdAt: "asc" } });
+    return expenses.map(toExpense);
 }
 
 // Add a new expense
 async function addExpense(expense) {
-    const sheets = await getSheetsClient();
-    const range = `${SHEET_NAME}!A2:Z`;
-    const refNo = `PT00${(await getAllExpenses()).length + 1}`;
-
-    const status = "Active";
-    const expenseId = `EXP-${Date.now()}`;
-    const date = DateTime.now().toFormat('dd/MM/yyyy');
-
-    const values = [[
-        expenseId, expense.category, refNo, date, status,
-        expense.amount, expense.description, expense.user_id
-    ]];
-
-    await sheets.spreadsheets.values.append({
-        spreadsheetId: SPREADSHEET_ID,
-        range,
-        valueInputOption: "RAW",
-        insertDataOption: "INSERT_ROWS",
-        requestBody: { values },
+    // Refs keep the original "PT00<n>" format; n continues from the highest ref.
+    await createWithNextCode({
+        prefix: "PT00",
+        loadCodes: async () => (await prisma.expense.findMany({ select: { ref: true } })).map((e) => e.ref),
+        create: (ref) =>
+            prisma.expense.create({
+                data: {
+                    id: `EXP-${Date.now()}`,
+                    category: expense.category,
+                    ref,
+                    date: DateTime.now().toFormat("dd/MM/yyyy"),
+                    status: "Active",
+                    amount: Number(expense.amount) || 0,
+                    description: expense.description,
+                    userId: expense.user_id,
+                },
+            }),
     });
 
     return { message: "Expense added successfully", expense };
@@ -55,23 +45,18 @@ async function addExpense(expense) {
 
 // Update an expense by reference
 async function updateExpense(ref, updatedExpense) {
-    const sheets = await getSheetsClient();
-    const expenses = await getAllExpenses();
+    const existing = await prisma.expense.findUnique({ where: { ref } });
+    if (!existing) throw new Error("Expense not found");
 
-    const rowIndex = expenses.findIndex(exp => exp.ref === ref);
-    if (rowIndex === -1) throw new Error("Expense not found");
-
-    const rowRange = `${SHEET_NAME}!A${rowIndex + 2}:F${rowIndex + 2}`;
-
-    await sheets.spreadsheets.values.update({
-        spreadsheetId: SPREADSHEET_ID,
-        range: rowRange,
-        valueInputOption: "RAW",
-        requestBody: {
-            values: [[
-                updatedExpense.category, updatedExpense.ref, updatedExpense.date,
-                updatedExpense.status, updatedExpense.amount, updatedExpense.description
-            ]]
+    const { category, date, status, amount, description } = updatedExpense;
+    await prisma.expense.update({
+        where: { ref },
+        data: {
+            category,
+            date,
+            status,
+            amount: amount === undefined ? undefined : Number(amount) || 0,
+            description,
         },
     });
 
@@ -80,18 +65,10 @@ async function updateExpense(ref, updatedExpense) {
 
 // Delete an expense by reference
 async function deleteExpense(ref) {
-    const sheets = await getSheetsClient();
-    const expenses = await getAllExpenses();
+    const existing = await prisma.expense.findUnique({ where: { ref } });
+    if (!existing) throw new Error("Expense not found");
 
-    const rowIndex = expenses.findIndex(exp => exp.ref === ref);
-    if (rowIndex === -1) throw new Error("Expense not found");
-
-    const rowRange = `${SHEET_NAME}!A${rowIndex + 2}:F${rowIndex + 2}`;
-    await sheets.spreadsheets.values.clear({
-        spreadsheetId: SPREADSHEET_ID,
-        range: rowRange,
-    });
-
+    await prisma.expense.delete({ where: { ref } });
     return { message: "Expense deleted successfully" };
 }
 
