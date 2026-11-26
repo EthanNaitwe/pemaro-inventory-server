@@ -1,70 +1,63 @@
 const salesService = require("../services/sale.g.service");
-const { DateTime } = require("luxon");
+const { sendError } = require("../config/http");
 
-// Get all sales
+// Get all sales (one row per sale line)
 async function getAllSales(req, res) {
     try {
         const sales = await salesService.getAllSales();
         res.status(200).json({ message: "Sales fetched successfully", sales });
     } catch (error) {
-        console.error("Error fetching sales:", error);
-        res.status(500).json({ error: "Failed to retrieve sales" });
+        sendError(res, error, { key: "error", fallback: "Failed to retrieve sales" });
     }
 }
 
-// Add a new sale
+// Single-product sale: POST /sales/:prodId/product
 async function addSale(req, res) {
     try {
         const { prodId } = req.params;
-        const { color, size, amount } = req.body;
+        const { quantity, payment_method, variant_id, amount_paid } = req.body;
 
-        if (!color || !size || !amount)
-            return res.status(400).json({ message: "All fields are required" });
+        if (!quantity) return res.status(400).json({ message: "All fields are required." });
 
-        await salesService.addSale(
-            {
-                id: `SAL-${Date.now()}`,
-                productId: prodId,
-                color,
-                size,
-                reference: 'REF-023',
-                status: 'Completed',
-                payment: 'Paid',
-                amount,
-                paid: amount,
-                due: 0,
-                date: DateTime.now().toFormat('dd/MM/yyyy'),
-            });
-        res.status(201).json({ message: "Sale added successfully" });
+        const sale = await salesService.createSale({
+            userId: req.user.id,
+            paymentMethod: payment_method,
+            amountPaid: amount_paid,
+            items: [{ productId: prodId, quantity, variantId: variant_id }],
+        });
+        res.status(201).json({ message: "Sale added successfully", sale });
     } catch (error) {
-        console.error("Error adding sale:", error);
-        res.status(500).json({ error: "Failed to add sale" });
+        sendError(res, error, { fallback: "Failed to add sale" });
     }
 }
 
-// Update a sale
-async function updateSale(req, res) {
+// Checkout with several lines (one receipt): POST /sales/product
+// Body: [{ prod_id, quantity, payment_method, variant_id? }, ...]
+async function addSalesBulk(req, res) {
     try {
-        const { rowIndex } = req.params;
-        const saleData = req.body;
-        await salesService.updateSale(parseInt(rowIndex), saleData);
-        res.status(200).json({ message: "Sale updated successfully" });
+        const lines = req.body;
+
+        if (!Array.isArray(lines) || lines.length === 0) {
+            return res.status(400).json({ error: "Sales data must be a non-empty array" });
+        }
+        if (lines.some((line) => !line.prod_id || !line.quantity)) {
+            return res.status(400).json({ error: "All fields are required" });
+        }
+
+        const sale = await salesService.createSale({
+            userId: req.user.id,
+            paymentMethod: lines.find((l) => l.payment_method)?.payment_method,
+            items: lines.map((line) => ({
+                productId: line.prod_id,
+                quantity: line.quantity,
+                variantId: line.variant_id,
+            })),
+        });
+
+        res.status(201).json({ message: "Sales added successfully", sale });
     } catch (error) {
-        console.error("Error updating sale:", error);
-        res.status(500).json({ error: "Failed to update sale" });
+        sendError(res, error, { key: "error", fallback: "Failed to add sales" });
     }
 }
 
-// Delete a sale
-async function deleteSale(req, res) {
-    try {
-        const { rowIndex } = req.params;
-        await salesService.deleteSale(parseInt(rowIndex));
-        res.status(200).json({ message: "Sale deleted successfully" });
-    } catch (error) {
-        console.error("Error deleting sale:", error);
-        res.status(500).json({ error: "Failed to delete sale" });
-    }
-}
-
-module.exports = { getAllSales, addSale, updateSale, deleteSale };
+module.exports = { getAllSales, addSale, addSalesBulk };

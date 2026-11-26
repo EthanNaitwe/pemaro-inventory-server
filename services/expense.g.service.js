@@ -1,96 +1,93 @@
-const { DateTime } = require("luxon");
-const { getSheetsClient } = require("../config/googleSheets");
+const prisma = require("../config/prisma");
+const { nextExpenseRef } = require("../config/sequence");
+const { money, displayDate, parseDate, expenseStatus, HttpError } = require("../config/format");
 
-const SPREADSHEET_ID = process.env.GOOGLE_SHEETS_SPREADSHEET_ID;
-const SHEET_NAME = "Expenses";
+const toExpense = (e) => ({
+    id: e.id,
+    category: e.category.name,
+    ref: e.ref,
+    date: displayDate(e.spentAt),
+    status: expenseStatus.toApi(e.status),
+    amount: money(e.amount),
+    description: e.description || "",
+    user_id: e.userId,
+});
 
-// Fetch all expenses
+async function findCategory(name) {
+    const category = await prisma.expenseCategory.findUnique({ where: { name: String(name || "") } });
+    if (!category) throw new HttpError(400, `Unknown expense category "${name}"`);
+    return category;
+}
+
+const parseAmount = (value) => {
+    const amount = Number(value);
+    if (!Number.isFinite(amount) || amount <= 0) throw new HttpError(400, "amount must be a positive number");
+    return amount;
+};
+
 async function getAllExpenses() {
-    const sheets = await getSheetsClient();
-    const range = `${SHEET_NAME}!A2:G`;
-
-    const response = await sheets.spreadsheets.values.get({
-        spreadsheetId: SPREADSHEET_ID,
-        range,
+    const expenses = await prisma.expense.findMany({
+        where: { deletedAt: null },
+        include: { category: true },
+        orderBy: { spentAt: "desc" },
     });
-
-    const rows = response.data.values || [];
-    return rows.map(row => ({
-        id: row[0] || "",
-        category: row[1] || "",
-        ref: row[2] || "",
-        date: row[3] || "",
-        status: row[4] || "",
-        amount: parseFloat(row[5]) || 0,
-        description: row[6] || "",
-    }));
+    return expenses.map(toExpense);
 }
 
-// Add a new expense
 async function addExpense(expense) {
-    const sheets = await getSheetsClient();
-    const range = `${SHEET_NAME}!A2:G`;
-    const refNo = `PT00${(await getAllExpenses()).length + 1}`;
+    const category = await findCategory(expense.category);
+    const amount = parseAmount(expense.amount);
 
-    const status = "Active";
-    const expenseId = `EXP-${Date.now()}`;
-    const date = DateTime.now().toFormat('dd/MM/yyyy');
+    const created = await prisma.$transaction(async (tx) =>
+        tx.expense.create({
+            data: {
+                ref: await nextExpenseRef(tx),
+                categoryId: category.id,
+                amount,
+                description: expense.description || null,
+                spentAt: parseDate(expense.date) || new Date(),
+                userId: expense.user_id,
+            },
+            include: { category: true },
+        })
+    );
 
-    const values = [[
-        expenseId, expense.category, refNo, date,
-        status, expense.amount, expense.description
-    ]];
-
-    await sheets.spreadsheets.values.append({
-        spreadsheetId: SPREADSHEET_ID,
-        range,
-        valueInputOption: "RAW",
-        insertDataOption: "INSERT_ROWS",
-        requestBody: { values },
-    });
-
-    return { message: "Expense added successfully", expense };
+    return { message: "Expense added successfully", expense: toExpense(created) };
 }
 
-// Update an expense by reference
 async function updateExpense(ref, updatedExpense) {
-    const sheets = await getSheetsClient();
-    const expenses = await getAllExpenses();
+    const existing = await prisma.expense.findFirst({ where: { ref, deletedAt: null } });
+    if (!existing) throw new HttpError(404, "Expense not found");
 
-    const rowIndex = expenses.findIndex(exp => exp.ref === ref);
-    if (rowIndex === -1) throw new Error("Expense not found");
+    const { category, date, status, amount, description } = updatedExpense;
+    let status_;
+    try {
+        status_ = status === undefined ? undefined : expenseStatus.fromApi(status);
+    } catch {
+        throw new HttpError(400, `Invalid status "${status}"`);
+    }
 
-    const rowRange = `${SHEET_NAME}!A${rowIndex + 2}:F${rowIndex + 2}`;
-
-    await sheets.spreadsheets.values.update({
-        spreadsheetId: SPREADSHEET_ID,
-        range: rowRange,
-        valueInputOption: "RAW",
-        requestBody: {
-            values: [[
-                updatedExpense.category, updatedExpense.ref, updatedExpense.date,
-                updatedExpense.status, updatedExpense.amount, updatedExpense.description
-            ]]
+    const updated = await prisma.expense.update({
+        where: { id: existing.id },
+        data: {
+            categoryId: category === undefined ? undefined : (await findCategory(category)).id,
+            spentAt: date === undefined ? undefined : parseDate(date),
+            status: status_,
+            amount: amount === undefined ? undefined : parseAmount(amount),
+            description,
         },
+        include: { category: true },
     });
 
-    return { message: "Expense updated successfully", updatedExpense };
+    return { message: "Expense updated successfully", updatedExpense: toExpense(updated) };
 }
 
-// Delete an expense by reference
+// Soft delete: the row stays for the audit trail but disappears from lists.
 async function deleteExpense(ref) {
-    const sheets = await getSheetsClient();
-    const expenses = await getAllExpenses();
+    const existing = await prisma.expense.findFirst({ where: { ref, deletedAt: null } });
+    if (!existing) throw new HttpError(404, "Expense not found");
 
-    const rowIndex = expenses.findIndex(exp => exp.ref === ref);
-    if (rowIndex === -1) throw new Error("Expense not found");
-
-    const rowRange = `${SHEET_NAME}!A${rowIndex + 2}:F${rowIndex + 2}`;
-    await sheets.spreadsheets.values.clear({
-        spreadsheetId: SPREADSHEET_ID,
-        range: rowRange,
-    });
-
+    await prisma.expense.update({ where: { id: existing.id }, data: { deletedAt: new Date(), status: "VOID" } });
     return { message: "Expense deleted successfully" };
 }
 
